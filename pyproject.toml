@@ -21,28 +21,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# Chrome 152 不在 PyPI utls 里，wheel 来自
-# https://github.com/xiaoweigege/utls/releases/tag/2026.9.4
-utls = [
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl ; sys_platform == 'darwin'",
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl ; sys_platform == 'linux' and platform_machine == 'x86_64'",
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-manylinux_2_28_aarch64.whl ; sys_platform == 'linux' and (platform_machine == 'aarch64' or platform_machine == 'arm64')",
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-win_amd64.whl ; sys_platform == 'win32' and (platform_machine == 'AMD64' or platform_machine == 'x86_64')",
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-win32.whl ; sys_platform == 'win32' and platform_machine == 'x86'",
-    "utls @ https://github.com/xiaoweigege/utls/releases/download/2026.9.4/utls-2026.9.4-cp37-abi3-win_arm64.whl ; sys_platform == 'win32' and platform_machine == 'ARM64'",
-]
+# Chrome 152 不在 PyPI utls。装完 extras 后执行: python -m tlsreq.install_utls
 curl_cffi = ["curl_cffi>=0.13"]
 wreq = ["wreq>=0.12"]
-niquests = [
-    "niquests>=3.0",
-    "tlsreq[utls]",
-]
-httpx = [
-    "httpx>=0.27",
-    "httpcore>=1.0",
-    "h2>=4.1",
-    "tlsreq[utls]",
-]
+niquests = ["niquests>=3.0"]
+httpx = ["httpx>=0.27", "httpcore>=1.0", "h2>=4.1"]
 all = [
     "tlsreq[curl_cffi]",
     "tlsreq[wreq]",

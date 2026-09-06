@@ -6,16 +6,14 @@ GitHub: https://github.com/xiaoweigege/tlsreq
 
 ## 安装
 
-Chrome 152 指纹不在 PyPI 的 `utls` 里，要用 GitHub Release：
-https://github.com/xiaoweigege/utls/releases/tag/2026.9.4
-
 ```bash
-pip install -e ".[httpx]"        # 会按平台拉 2026.9.4 的 utls wheel
-pip install -e ".[niquests]"
-pip install -e ".[all]"          # 四个 backend 全装
+pip install tlsreq
+pip install "tlsreq[httpx]"      # 或 niquests / wreq / curl_cffi / all
 ```
 
-如果 extras 没装上 utls，或当前还是 PyPI 的 2026.7.8：
+Chrome 152 不在 PyPI 的 `utls` 里。httpx / niquests 需要再装 GitHub 2026.9.4：
+
+https://github.com/xiaoweigege/utls/releases/tag/2026.9.4
 
 ```bash
 python -m tlsreq.install_utls
