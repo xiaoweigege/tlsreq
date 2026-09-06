@@ -1,6 +1,6 @@
 import unittest
 
-from tlsreq import AsyncSession, Session
+from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
 from tlsreq.errors import UnknownBackend, UnknownFingerprint
 from tlsreq.response import Response, cookies_to_dict, headers_to_dict, status_code_of
@@ -49,22 +49,34 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(wheel_url().startswith("https://github.com/xiaoweigege/utls/releases/download/"))
 
 
+def _can_import(name: str) -> bool:
+    try:
+        __import__(name)
+        return True
+    except ImportError:
+        return False
+
+
 class ConstructTests(unittest.TestCase):
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_sync_and_async_construct(self):
         s = Session("httpx", "chrome152")
         self.assertEqual(type(s.raw).__name__, "Client")
         s.close()
 
+    @unittest.skipUnless(_can_import("niquests") and _can_import("utls"), "niquests/utls not installed")
     def test_niquests_construct(self):
         s = Session("niquests", "chrome152")
         self.assertTrue(hasattr(s.raw, "request"))
         s.close()
 
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_construct(self):
         s = Session("wreq", "chrome149")
         self.assertTrue(s.raw is not None)
         s.close()
 
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_unknown_fingerprint(self):
         with self.assertRaises(UnknownFingerprint):
             Session("httpx", "chrome149")

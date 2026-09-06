@@ -9,7 +9,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +17,16 @@ jobs:
           python-version: "3.12"
       - name: Build
         run: |
-          pip install build
+          pip install build twine
           python -m build
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$TWINE_PASSWORD" ]; then
+            echo "Skip PyPI upload: set repo secret PYPI_API_TOKEN to enable."
+            echo "Local twine upload still works without this workflow."
+            exit 0
+          fi
+          twine upload dist/* --non-interactive

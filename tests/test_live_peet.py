@@ -56,6 +56,14 @@ async def _peet(backend: str, impersonate: str) -> dict:
     return data
 
 
+def _can_import(name: str) -> bool:
+    try:
+        __import__(name)
+        return True
+    except ImportError:
+        return False
+
+
 @unittest.skipIf(os.environ.get("TLSREQ_SKIP_LIVE"), "live peet skipped")
 class LivePeetTests(unittest.TestCase):
     def _assert_chrome152(self, data: dict) -> None:
@@ -74,12 +82,15 @@ class LivePeetTests(unittest.TestCase):
         self.assertEqual(headers_frame["priority"]["weight"], 256)
         self.assertEqual(headers_frame["priority"]["exclusive"], 1)
 
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_chrome152(self):
         self._assert_chrome152(asyncio.run(_peet("httpx", "chrome152")))
 
+    @unittest.skipUnless(_can_import("niquests") and _can_import("utls"), "niquests/utls not installed")
     def test_niquests_chrome152(self):
         self._assert_chrome152(asyncio.run(_peet("niquests", "chrome152")))
 
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_gets_200(self):
         with Session("wreq", "chrome149", timeout=45) as session:
             response = session.get(PEET, headers=HEADERS)
