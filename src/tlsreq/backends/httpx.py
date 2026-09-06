@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ssl
 from typing import Any, Optional
 
 from ..chrome_h2 import chrome_http1_header_name
@@ -22,12 +23,64 @@ def _import_httpx():
     return httpx, utls
 
 
+def _fill_sslerror_strerror(exc: BaseException) -> None:
+    """utls 的 SSLError 常只有 message、strerror=None。
+
+    anyio 会执行 ``"UNEXPECTED_EOF_WHILE_READING" in exc.strerror``，
+    strerror 为 None 时变成 ``argument of type 'NoneType' is not iterable``。
+    close_notify 再补上这个标记，漏网的 SSLZeroReturnError 也会被当成 EOF。
+    """
+    if not isinstance(exc, ssl.SSLError):
+        return
+    message = exc.strerror
+    if message is None:
+        message = exc.args[-1] if exc.args else str(exc)
+    if not isinstance(message, str):
+        message = str(exc)
+    if (
+        isinstance(exc, ssl.SSLZeroReturnError)
+        and "UNEXPECTED_EOF_WHILE_READING" not in message
+    ):
+        message = f"UNEXPECTED_EOF_WHILE_READING: {message}"
+    if exc.strerror == message:
+        return
+    try:
+        exc.strerror = message
+    except Exception:
+        return
+
+
 class _SSLObjectAdapter:
     def __init__(self, inner: Any) -> None:
         self._inner = inner
 
     def __getattr__(self, name: str) -> Any:
-        return getattr(self._inner, name)
+        attr = getattr(self._inner, name)
+        if not callable(attr):
+            return attr
+
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return attr(*args, **kwargs)
+            except ssl.SSLError as exc:
+                _fill_sslerror_strerror(exc)
+                raise
+
+        return wrapper
+
+    def read(self, n: int = 1024, buffer: Any = None) -> Any:
+        # utls wrap_socket 把 close_notify 收成空读；wrap_bio 会抛 SSLZeroReturnError。
+        # anyio 只把 SSLEOFError / UNEXPECTED_EOF_WHILE_READING 当 EOF，
+        # 这里对齐 stdlib：干净关闭返回 b''，h11 才能解析已经解密的响应。
+        try:
+            if buffer is None:
+                return self._inner.read(n)
+            return self._inner.read(n, buffer)
+        except ssl.SSLZeroReturnError:
+            return b"" if buffer is None else 0
+        except ssl.SSLError as exc:
+            _fill_sslerror_strerror(exc)
+            raise
 
     def get_channel_binding(self, cb_type: str = "tls-unique") -> None:
         return None
@@ -62,7 +115,6 @@ def _make_context(profile: str, verify: bool):
     ctx.load_default_certs()
     ctx.set_fingerprint(fp)
     if not verify:
-        import ssl
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
     return ctx
