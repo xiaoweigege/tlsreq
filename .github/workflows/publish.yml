@@ -8,6 +8,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: PYPI_API_TOKEN
     permissions:
       contents: read
     steps:
@@ -22,11 +23,11 @@ jobs:
       - name: Publish
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.__TOKEN__ }}
         run: |
           if [ -z "$TWINE_PASSWORD" ]; then
-            echo "Skip PyPI upload: set repo secret PYPI_API_TOKEN to enable."
-            echo "Local twine upload still works without this workflow."
-            exit 0
+            echo "Skip PyPI upload: environment PYPI_API_TOKEN secret __TOKEN__ is empty."
+            exit 1
           fi
+          echo "PyPI token is set (length ${#TWINE_PASSWORD})."
           twine upload dist/* --non-interactive
