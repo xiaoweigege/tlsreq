@@ -137,6 +137,27 @@ def _client_kwargs(
     return merge_extra(mapped, extra)
 
 
+def _new_client(
+    is_async: bool,
+    impersonate: Optional[str],
+    *,
+    proxy: Optional[str],
+    timeout: float,
+    verify: bool,
+    headers: Optional[dict],
+    allow_redirects: bool,
+    extra: Optional[dict[str, Any]],
+) -> tuple[Any, Any]:
+    wreq = _import_wreq()
+    cls = wreq.Client if is_async else wreq.blocking.Client
+    client = cls(
+        **_client_kwargs(
+            wreq, impersonate, proxy, timeout, verify, headers, allow_redirects, extra
+        )
+    )
+    return wreq, client
+
+
 class WreqSync(SyncBackend):
     def __init__(
         self,
@@ -150,10 +171,15 @@ class WreqSync(SyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        wreq = _import_wreq()
-        self._wreq = wreq
-        self._client = wreq.blocking.Client(
-            **_client_kwargs(wreq, impersonate, proxy, timeout, verify, headers, allow_redirects, extra)
+        self._wreq, self._client = _new_client(
+            False,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            allow_redirects=allow_redirects,
+            extra=extra,
         )
         if cookies:
             self.set_cookies(cookies)
@@ -200,10 +226,15 @@ class WreqAsync(AsyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        wreq = _import_wreq()
-        self._wreq = wreq
-        self._client = wreq.Client(
-            **_client_kwargs(wreq, impersonate, proxy, timeout, verify, headers, allow_redirects, extra)
+        self._wreq, self._client = _new_client(
+            True,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            allow_redirects=allow_redirects,
+            extra=extra,
         )
         self._pending_cookies = dict(cookies or {})
 

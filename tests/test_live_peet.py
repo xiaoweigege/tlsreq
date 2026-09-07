@@ -46,14 +46,23 @@ HEADER_ORDER = [
 ]
 
 
+def _pack(response) -> dict:
+    data = response.json()
+    data["_status"] = response.status_code
+    data["_http_version"] = data.get("http_version")
+    return data
+
+
+def _peet_sync(backend: str, impersonate: str) -> dict:
+    with Session(backend, impersonate, timeout=45) as session:
+        response = session.get(PEET, headers=HEADERS, header_order=HEADER_ORDER)
+    return _pack(response)
+
+
 async def _peet(backend: str, impersonate: str) -> dict:
     async with AsyncSession(backend, impersonate, timeout=45) as session:
         response = await session.get(PEET, headers=HEADERS, header_order=HEADER_ORDER)
-    self_status = response.status_code
-    data = response.json()
-    data["_status"] = self_status
-    data["_http_version"] = data.get("http_version")
-    return data
+    return _pack(response)
 
 
 def _can_import(name: str) -> bool:
@@ -83,17 +92,35 @@ class LivePeetTests(unittest.TestCase):
         self.assertEqual(headers_frame["priority"]["exclusive"], 1)
 
     @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
-    def test_httpx_chrome152(self):
+    def test_httpx_chrome152_async(self):
         self._assert_chrome152(asyncio.run(_peet("httpx", "chrome152")))
 
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
+    def test_httpx_chrome152_sync(self):
+        self._assert_chrome152(_peet_sync("httpx", "chrome152"))
+
     @unittest.skipUnless(_can_import("niquests") and _can_import("utls"), "niquests/utls not installed")
-    def test_niquests_chrome152(self):
+    def test_niquests_chrome152_async(self):
         self._assert_chrome152(asyncio.run(_peet("niquests", "chrome152")))
 
+    @unittest.skipUnless(_can_import("niquests") and _can_import("utls"), "niquests/utls not installed")
+    def test_niquests_chrome152_sync(self):
+        self._assert_chrome152(_peet_sync("niquests", "chrome152"))
+
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
-    def test_wreq_gets_200(self):
+    def test_wreq_sync(self):
         with Session("wreq", "chrome149", timeout=45) as session:
             response = session.get(PEET, headers=HEADERS)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("tls", response.json())
+
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
+    def test_wreq_async(self):
+        async def _run():
+            async with AsyncSession("wreq", "chrome149", timeout=45) as session:
+                return await session.get(PEET, headers=HEADERS)
+
+        response = asyncio.run(_run())
         self.assertEqual(response.status_code, 200)
         self.assertIn("tls", response.json())
 

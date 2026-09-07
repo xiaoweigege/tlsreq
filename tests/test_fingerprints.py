@@ -17,6 +17,8 @@ class FingerprintTests(unittest.TestCase):
 
     def test_resolve_wreq_and_curl(self):
         self.assertEqual(resolve("wreq", "chrome149"), "Chrome149")
+        self.assertEqual(resolve("wreq", "chrome120"), "Chrome120")
+        self.assertEqual(resolve("wreq", "chrome"), "Chrome149")
         self.assertEqual(resolve("curl_cffi", "chrome150"), "chrome150")
 
     def test_unknown_fingerprint(self):

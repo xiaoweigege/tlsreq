@@ -71,6 +71,26 @@ def _session_kwargs(
     return merge_extra(mapped, extra)
 
 
+def _new_session(
+    is_async: bool,
+    impersonate: Optional[str],
+    proxy: Optional[str],
+    timeout: float,
+    verify: bool,
+    headers: Optional[dict],
+    cookies: Optional[dict],
+    allow_redirects: bool,
+    extra: Optional[dict[str, Any]],
+) -> Any:
+    requests = _import_curl_cffi()
+    cls = requests.AsyncSession if is_async else requests.Session
+    return cls(
+        **_session_kwargs(
+            impersonate, proxy, timeout, verify, headers, cookies, allow_redirects, extra
+        )
+    )
+
+
 class CurlCffiSync(SyncBackend):
     def __init__(
         self,
@@ -84,9 +104,8 @@ class CurlCffiSync(SyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        requests = _import_curl_cffi()
-        self._session = requests.Session(
-            **_session_kwargs(impersonate, proxy, timeout, verify, headers, cookies, allow_redirects, extra)
+        self._session = _new_session(
+            False, impersonate, proxy, timeout, verify, headers, cookies, allow_redirects, extra
         )
 
     def request(self, method: str, url: str, **kwargs: Any) -> Response:
@@ -123,9 +142,8 @@ class CurlCffiAsync(AsyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        requests = _import_curl_cffi()
-        self._session = requests.AsyncSession(
-            **_session_kwargs(impersonate, proxy, timeout, verify, headers, cookies, allow_redirects, extra)
+        self._session = _new_session(
+            True, impersonate, proxy, timeout, verify, headers, cookies, allow_redirects, extra
         )
 
     async def request(self, method: str, url: str, **kwargs: Any) -> Response:

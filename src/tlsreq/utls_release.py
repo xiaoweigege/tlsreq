@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .errors import BackendNotInstalled, UnknownFingerprint
+from .errors import UnknownFingerprint
 
 XUTLS_DIST = "xutls"
 UTLS_RELEASE = "2026.9.7"
@@ -17,37 +17,10 @@ _INSTALL_HINT = (
 )
 
 
-def _version_tuple(version: str) -> tuple[int, ...]:
-    parts = []
-    for item in version.split("."):
-        digits = "".join(ch for ch in item if ch.isdigit())
-        parts.append(int(digits) if digits else 0)
-    return tuple(parts)
-
-
-def utls_version() -> str:
-    from importlib.metadata import PackageNotFoundError, version
-
-    for name in (XUTLS_DIST, "utls"):
-        try:
-            return version(name)
-        except PackageNotFoundError:
-            continue
-    import utls
-
-    return str(getattr(utls, "__version__", "0"))
-
-
 def fingerprint_from_preset(utls: Any, profile: str) -> Any:
-    version = utls_version()
-    if _version_tuple(version) < _version_tuple(UTLS_RELEASE):
-        raise BackendNotInstalled(
-            f"当前 TLS 库 {version} 太旧，Chrome 152 需要 {XUTLS_DIST}>={UTLS_RELEASE}。"
-            f"\n{_INSTALL_HINT}"
-        )
     try:
         return utls.Fingerprint.from_preset(profile)
     except ValueError as exc:
         raise UnknownFingerprint(
-            f"当前 {XUTLS_DIST}/{version} 没有指纹 {profile!r}。\n{_INSTALL_HINT}\n原始错误: {exc}"
+            f"当前 utls 没有指纹 {profile!r}。\n{_INSTALL_HINT}\n原始错误: {exc}"
         ) from exc

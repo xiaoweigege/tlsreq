@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, Optional
 
 from ..errors import UnknownBackend
@@ -13,10 +14,29 @@ _ALIASES = {
     "nio": "niquests",
 }
 
+_BACKENDS = {
+    "curl_cffi": ("curl_cffi", "CurlCffiSync", "CurlCffiAsync"),
+    "wreq": ("wreq", "WreqSync", "WreqAsync"),
+    "niquests": ("niquests", "NiquestsSync", "NiquestsAsync"),
+    "httpx": ("httpx", "HttpxSync", "HttpxAsync"),
+}
+
 
 def _normalize_backend(name: str) -> str:
     key = name.strip().lower().replace("-", "_")
     return _ALIASES.get(key, key)
+
+
+def _backend_class(backend: str, is_async: bool) -> type:
+    name = _normalize_backend(backend)
+    spec = _BACKENDS.get(name)
+    if spec is None:
+        raise UnknownBackend(
+            f"未知 backend {backend!r}。可选: curl_cffi, wreq, niquests, httpx"
+        )
+    module_name, sync_name, async_name = spec
+    module = import_module(f".{module_name}", __package__)
+    return getattr(module, async_name if is_async else sync_name)
 
 
 def create_sync_backend(
@@ -24,20 +44,7 @@ def create_sync_backend(
     impersonate: Optional[str] = None,
     **kwargs: Any,
 ) -> SyncBackend:
-    name = _normalize_backend(backend)
-    if name == "curl_cffi":
-        from .curl_cffi import CurlCffiSync
-        return CurlCffiSync(impersonate=impersonate, **kwargs)
-    if name == "wreq":
-        from .wreq import WreqSync
-        return WreqSync(impersonate=impersonate, **kwargs)
-    if name == "niquests":
-        from .niquests import NiquestsSync
-        return NiquestsSync(impersonate=impersonate, **kwargs)
-    if name == "httpx":
-        from .httpx import HttpxSync
-        return HttpxSync(impersonate=impersonate, **kwargs)
-    raise UnknownBackend(f"未知 backend {backend!r}。可选: curl_cffi, wreq, niquests, httpx")
+    return _backend_class(backend, False)(impersonate=impersonate, **kwargs)
 
 
 def create_async_backend(
@@ -45,17 +52,4 @@ def create_async_backend(
     impersonate: Optional[str] = None,
     **kwargs: Any,
 ) -> AsyncBackend:
-    name = _normalize_backend(backend)
-    if name == "curl_cffi":
-        from .curl_cffi import CurlCffiAsync
-        return CurlCffiAsync(impersonate=impersonate, **kwargs)
-    if name == "wreq":
-        from .wreq import WreqAsync
-        return WreqAsync(impersonate=impersonate, **kwargs)
-    if name == "niquests":
-        from .niquests import NiquestsAsync
-        return NiquestsAsync(impersonate=impersonate, **kwargs)
-    if name == "httpx":
-        from .httpx import HttpxAsync
-        return HttpxAsync(impersonate=impersonate, **kwargs)
-    raise UnknownBackend(f"未知 backend {backend!r}。可选: curl_cffi, wreq, niquests, httpx")
+    return _backend_class(backend, True)(impersonate=impersonate, **kwargs)

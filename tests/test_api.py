@@ -1,10 +1,19 @@
+import asyncio
 import unittest
 
 from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
 from tlsreq.errors import UnknownBackend, UnknownFingerprint
 from tlsreq.response import Response, cookies_to_dict, headers_to_dict, status_code_of
-from tlsreq.utls_release import UTLS_RELEASE, XUTLS_DIST, utls_version
+from tlsreq.utls_release import UTLS_RELEASE, XUTLS_DIST, fingerprint_from_preset
+
+
+def _can_import(name: str) -> bool:
+    try:
+        __import__(name)
+        return True
+    except ImportError:
+        return False
 
 
 class ApiTests(unittest.TestCase):
@@ -43,32 +52,39 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(resp.json(), {"ok": True})
         self.assertEqual(resp.text, '{"ok": true}')
 
-    def test_utls_release_pin(self):
+    @unittest.skipUnless(_can_import("utls"), "utls not installed")
+    def test_chrome152_preset(self):
+        import utls
+
         self.assertEqual(XUTLS_DIST, "xutls")
         self.assertEqual(UTLS_RELEASE, "2026.9.7")
-        self.assertGreaterEqual(utls_version(), UTLS_RELEASE)
-
-
-def _can_import(name: str) -> bool:
-    try:
-        __import__(name)
-        return True
-    except ImportError:
-        return False
+        fp = fingerprint_from_preset(utls, "chrome:152")
+        ja4 = str(getattr(fp, "ja4_hash", ""))
+        self.assertTrue(ja4.startswith("t13d1517h2"), ja4)
 
 
 class ConstructTests(unittest.TestCase):
     @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_sync_and_async_construct(self):
+        from tlsreq import AsyncSession
+
         s = Session("httpx", "chrome152")
         self.assertEqual(type(s.raw).__name__, "Client")
         s.close()
+        async_s = AsyncSession("httpx", "chrome152")
+        self.assertEqual(type(async_s.raw).__name__, "AsyncClient")
+        asyncio.run(async_s.close())
 
     @unittest.skipUnless(_can_import("niquests") and _can_import("utls"), "niquests/utls not installed")
     def test_niquests_construct(self):
+        from tlsreq import AsyncSession
+
         s = Session("niquests", "chrome152")
         self.assertTrue(hasattr(s.raw, "request"))
         s.close()
+        async_s = AsyncSession("niquests", "chrome152")
+        self.assertTrue(hasattr(async_s.raw, "request"))
+        asyncio.run(async_s.close())
 
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_construct(self):

@@ -98,6 +98,39 @@ def _request_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return merge_extra(mapped, extra)
 
 
+def _new_session(
+    is_async: bool,
+    impersonate: Optional[str],
+    *,
+    proxy: Optional[str],
+    timeout: float,
+    verify: bool,
+    headers: Optional[dict],
+    cookies: Optional[dict],
+    extra: Optional[dict[str, Any]],
+) -> Any:
+    niquests, _utls, TLSConfiguration = _import_niquests()
+    extra = dict(extra or {})
+    _apply_patches(extra.pop("h2_patch", True), extra.pop("h1_patch", True))
+    profile = resolve("niquests", impersonate)
+    mapped = {
+        "timeout": timeout,
+        "verify": verify,
+        "disable_http3": True,
+        "pool_maxsize": 1,
+        "tls_configuration": TLSConfiguration(backend="utls"),
+        "headers": headers,
+        "cookies": cookies,
+    }
+    mapped = {k: v for k, v in mapped.items() if v is not None}
+    cls = niquests.AsyncSession if is_async else niquests.Session
+    session = cls(**merge_extra(mapped, extra))
+    if proxy:
+        session.proxies = {"all": proxy}
+    _attach_ssl_context(session, _make_ssl_context(profile, verify))
+    return session
+
+
 class NiquestsSync(SyncBackend):
     def __init__(
         self,
@@ -111,28 +144,17 @@ class NiquestsSync(SyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        niquests, _utls, TLSConfiguration = _import_niquests()
-        extra = dict(extra or {})
-        h2_patch = extra.pop("h2_patch", True)
-        h1_patch = extra.pop("h1_patch", True)
-        _apply_patches(h2_patch, h1_patch)
-        profile = resolve("niquests", impersonate)
-        mapped = {
-            "timeout": timeout,
-            "verify": verify,
-            "disable_http3": True,
-            "pool_maxsize": 1,
-            "tls_configuration": TLSConfiguration(backend="utls"),
-            "headers": headers,
-            "cookies": cookies,
-        }
-        mapped = {k: v for k, v in mapped.items() if v is not None}
-        kwargs = merge_extra(mapped, extra)
         self._follow = allow_redirects
-        self._session = niquests.Session(**kwargs)
-        if proxy:
-            self._session.proxies = {"all": proxy}
-        _attach_ssl_context(self._session, _make_ssl_context(profile, verify))
+        self._session = _new_session(
+            False,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            cookies=cookies,
+            extra=extra,
+        )
 
     def request(self, method: str, url: str, **kwargs: Any) -> Response:
         req = _request_kwargs(kwargs)
@@ -166,28 +188,17 @@ class NiquestsAsync(AsyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        niquests, _utls, TLSConfiguration = _import_niquests()
-        extra = dict(extra or {})
-        h2_patch = extra.pop("h2_patch", True)
-        h1_patch = extra.pop("h1_patch", True)
-        _apply_patches(h2_patch, h1_patch)
-        profile = resolve("niquests", impersonate)
-        mapped = {
-            "timeout": timeout,
-            "verify": verify,
-            "disable_http3": True,
-            "pool_maxsize": 1,
-            "tls_configuration": TLSConfiguration(backend="utls"),
-            "headers": headers,
-            "cookies": cookies,
-        }
-        mapped = {k: v for k, v in mapped.items() if v is not None}
-        kwargs = merge_extra(mapped, extra)
         self._follow = allow_redirects
-        self._session = niquests.AsyncSession(**kwargs)
-        if proxy:
-            self._session.proxies = {"all": proxy}
-        _attach_ssl_context(self._session, _make_ssl_context(profile, verify))
+        self._session = _new_session(
+            True,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            cookies=cookies,
+            extra=extra,
+        )
 
     async def request(self, method: str, url: str, **kwargs: Any) -> Response:
         req = _request_kwargs(kwargs)

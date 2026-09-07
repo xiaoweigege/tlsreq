@@ -202,6 +202,47 @@ def _request_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return merge_extra(mapped, extra)
 
 
+def _new_client(
+    is_async: bool,
+    impersonate: Optional[str],
+    *,
+    proxy: Optional[str],
+    timeout: float,
+    verify: bool,
+    headers: Optional[dict],
+    cookies: Optional[dict],
+    allow_redirects: bool,
+    extra: Optional[dict[str, Any]],
+) -> Any:
+    httpx, _utls = _import_httpx()
+    extra = dict(extra or {})
+    if extra.pop("h2_patch", True):
+        from ._httpx_patch import patch_httpcore_chrome_h2
+        patch_httpcore_chrome_h2()
+    ctx = _make_context(resolve("httpx", impersonate), verify)
+    transport_cls = httpx.AsyncHTTPTransport if is_async else httpx.HTTPTransport
+    client_cls = httpx.AsyncClient if is_async else httpx.Client
+    hook = _on_request_async if is_async else _on_request
+    # httpcore 同步在 http1+http2 同时开时会走 HTTP/1.1，即使 JA4 已是 h2。
+    transport = extra.pop("transport", None) or transport_cls(
+        verify=ctx, http1=False, http2=True, proxy=proxy,
+    )
+    mapped = {
+        "transport": transport,
+        "timeout": timeout,
+        "trust_env": False,
+        "verify": False,
+        "follow_redirects": allow_redirects,
+        "headers": headers,
+        "cookies": cookies,
+        "event_hooks": {"request": [hook]},
+    }
+    mapped = {k: v for k, v in mapped.items() if v is not None}
+    client = client_cls(**merge_extra(mapped, extra))
+    client._headers = httpx.Headers([])
+    return client
+
+
 class HttpxSync(SyncBackend):
     def __init__(
         self,
@@ -215,31 +256,17 @@ class HttpxSync(SyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        httpx, _utls = _import_httpx()
-        extra = dict(extra or {})
-        h2_patch = extra.pop("h2_patch", True)
-        if h2_patch:
-            from ._httpx_patch import patch_httpcore_chrome_h2
-            patch_httpcore_chrome_h2()
-        profile = resolve("httpx", impersonate)
-        ctx = _make_context(profile, verify)
-        transport = extra.pop("transport", None) or httpx.HTTPTransport(
-            verify=ctx, http2=True, proxy=proxy,
+        self._client = _new_client(
+            False,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            cookies=cookies,
+            allow_redirects=allow_redirects,
+            extra=extra,
         )
-        mapped = {
-            "transport": transport,
-            "timeout": timeout,
-            "trust_env": False,
-            "verify": False,
-            "follow_redirects": allow_redirects,
-            "headers": headers,
-            "cookies": cookies,
-            "event_hooks": {"request": [_on_request]},
-        }
-        mapped = {k: v for k, v in mapped.items() if v is not None}
-        kwargs = merge_extra(mapped, extra)
-        self._client = httpx.Client(**kwargs)
-        self._client._headers = httpx.Headers([])
 
     def request(self, method: str, url: str, **kwargs: Any) -> Response:
         return _wrap(self._client.request(method, url, **_request_kwargs(kwargs)))
@@ -271,31 +298,17 @@ class HttpxAsync(AsyncBackend):
         allow_redirects: bool = True,
         extra: Optional[dict[str, Any]] = None,
     ) -> None:
-        httpx, _utls = _import_httpx()
-        extra = dict(extra or {})
-        h2_patch = extra.pop("h2_patch", True)
-        if h2_patch:
-            from ._httpx_patch import patch_httpcore_chrome_h2
-            patch_httpcore_chrome_h2()
-        profile = resolve("httpx", impersonate)
-        ctx = _make_context(profile, verify)
-        transport = extra.pop("transport", None) or httpx.AsyncHTTPTransport(
-            verify=ctx, http2=True, proxy=proxy,
+        self._client = _new_client(
+            True,
+            impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=headers,
+            cookies=cookies,
+            allow_redirects=allow_redirects,
+            extra=extra,
         )
-        mapped = {
-            "transport": transport,
-            "timeout": timeout,
-            "trust_env": False,
-            "verify": False,
-            "follow_redirects": allow_redirects,
-            "headers": headers,
-            "cookies": cookies,
-            "event_hooks": {"request": [_on_request_async]},
-        }
-        mapped = {k: v for k, v in mapped.items() if v is not None}
-        kwargs = merge_extra(mapped, extra)
-        self._client = httpx.AsyncClient(**kwargs)
-        self._client._headers = httpx.Headers([])
 
     async def request(self, method: str, url: str, **kwargs: Any) -> Response:
         return _wrap(await self._client.request(method, url, **_request_kwargs(kwargs)))
