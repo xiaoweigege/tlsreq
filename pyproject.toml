@@ -33,9 +33,6 @@ all = [
     "tlsreq[httpx]",
 ]
 
-[project.scripts]
-tlsreq-install-utls = "tlsreq.install_utls:main"
-
 [project.urls]
 Homepage = "https://github.com/xiaoweigege/tlsreq"
 Repository = "https://github.com/xiaoweigege/tlsreq"

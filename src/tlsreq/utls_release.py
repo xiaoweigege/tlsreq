@@ -13,7 +13,6 @@ _INSTALL_HINT = (
     f"Chrome 152 需要 PyPI 包 {XUTLS_DIST}>={UTLS_RELEASE}（import 仍是 utls）。\n"
     f"不要装官方 utls，也不要和 xutls 装在同一个环境。\n"
     f"  pip install '{XUTLS_DIST}>={UTLS_RELEASE}'\n"
-    f"或: python -m tlsreq.install_utls\n"
     f"见 {UTLS_RELEASE_PAGE}"
 )
 

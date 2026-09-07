@@ -27,12 +27,7 @@ pip install "tlsreq[httpx]"       # or niquests / wreq / curl_cffi / all
 | `curl_cffi` | curl_cffi | |
 | `all` | everything above | |
 
-`httpx` / `niquests` extras install [xutls](https://pypi.org/project/xutls/) (import name is still `utls`). Do **not** also install the upstream `utls` package — both provide the `utls` module.
-
-```bash
-pip install -U xutls
-# equivalent: python -m tlsreq.install_utls
-```
+`httpx` / `niquests` extras install [xutls](https://pypi.org/project/xutls/) (import name is still `utls`). Do **not** also install the upstream `utls` package — both provide the `utls` module. To upgrade later: `pip install -U xutls`.
 
 ## Quick start
 
