@@ -19,7 +19,14 @@ class FingerprintTests(unittest.TestCase):
         self.assertEqual(resolve("wreq", "chrome149"), "Chrome149")
         self.assertEqual(resolve("wreq", "chrome120"), "Chrome120")
         self.assertEqual(resolve("wreq", "chrome"), "Chrome149")
+        self.assertEqual(resolve("wreq", "firefox"), "Firefox151")
+        self.assertEqual(resolve("wreq", "safari"), "Safari26_4")
+        self.assertEqual(resolve("wreq", "edge148"), "Edge148")
+        self.assertEqual(resolve("wreq", "OkHttp5"), "OkHttp5")
         self.assertEqual(resolve("curl_cffi", "chrome150"), "chrome150")
+        self.assertEqual(resolve("curl_cffi", "safari"), "safari2601")
+        self.assertEqual(resolve("curl_cffi", "firefox"), "firefox147")
+        self.assertEqual(resolve("curl_cffi", "chrome_android"), "chrome131_android")
 
     def test_unknown_fingerprint(self):
         with self.assertRaises(UnknownFingerprint):

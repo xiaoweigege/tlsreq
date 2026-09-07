@@ -223,9 +223,8 @@ def _new_client(
     transport_cls = httpx.AsyncHTTPTransport if is_async else httpx.HTTPTransport
     client_cls = httpx.AsyncClient if is_async else httpx.Client
     hook = _on_request_async if is_async else _on_request
-    # httpcore 同步在 http1+http2 同时开时会走 HTTP/1.1，即使 JA4 已是 h2。
     transport = extra.pop("transport", None) or transport_cls(
-        verify=ctx, http1=False, http2=True, proxy=proxy,
+        verify=ctx, http1=True, http2=True, proxy=proxy,
     )
     mapped = {
         "transport": transport,

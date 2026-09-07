@@ -31,7 +31,7 @@ def _emulation(wreq: Any, impersonate: Optional[str]) -> Any:
     name = resolve("wreq", impersonate)
     emu = getattr(wreq.Emulation, name, None)
     if emu is None:
-        available = [item for item in dir(wreq.Emulation) if item.startswith("Chrome") or item.startswith("Firefox") or item.startswith("Safari")]
+        available = [item for item in dir(wreq.Emulation) if not item.startswith("_")]
         raise UnknownFingerprint(f"wreq 没有指纹 {name!r}。可用: {available}")
     return emu
 

@@ -75,7 +75,9 @@ The native client is on `session.raw` when you need a backend-specific knob.
 
 Unknown `backend` or `impersonate` values raise. There is no silent fallback to another profile.
 
-`chrome` / `chromestable` map to that backend’s current default.
+`chrome` / `chromestable` map to that backend’s current default. `wreq` also accepts its native names (`Firefox151`, `Safari18_5`, `Edge148`, `Opera131`, `OkHttp5`, …). `curl_cffi` accepts `firefox`, `safari`, `edge`, `chrome_android`, `tor`, and the library’s versioned profiles.
+
+httpx / niquests offer both HTTP/2 and HTTP/1.1. The protocol is chosen from the negotiated TLS ALPN (`h2` vs `http/1.1`); an HTTP/1.1-only origin falls back instead of failing.
 
 ## Chrome 152 (niquests / httpx)
 

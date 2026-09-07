@@ -75,7 +75,9 @@ with Session("wreq", "chrome149", proxy="http://127.0.0.1:7890") as s:
 
 无法识别的 `backend` 或 `impersonate` 会直接报错，不会静默换成别的指纹。
 
-`chrome` / `chromestable` 映射到该后端当前默认值。
+`chrome` / `chromestable` 映射到该后端当前默认值。`wreq` 还可直接用库里的名字（`Firefox151`、`Safari18_5`、`Edge148`、`Opera131`、`OkHttp5` 等）。`curl_cffi` 可用 `firefox`、`safari`、`edge`、`chrome_android`、`tor` 以及带版本号的 profile。
+
+httpx / niquests 同时开 HTTP/2 和 HTTP/1.1，按 TLS ALPN 协商结果选协议；站点只支持 HTTP/1.1 时会回退，不会硬失败。
 
 ## Chrome 152（niquests / httpx）
 

@@ -92,6 +92,13 @@ class ConstructTests(unittest.TestCase):
         self.assertTrue(s.raw is not None)
         s.close()
 
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
+    def test_wreq_other_fingerprints(self):
+        for name in ("firefox", "safari", "edge", "OkHttp5"):
+            s = Session("wreq", name)
+            self.assertTrue(s.raw is not None)
+            s.close()
+
     @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_unknown_fingerprint(self):
         with self.assertRaises(UnknownFingerprint):

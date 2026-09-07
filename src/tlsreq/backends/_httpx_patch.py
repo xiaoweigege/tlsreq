@@ -45,10 +45,39 @@ def _restore_local_only(settings: h2.settings.Settings) -> None:
     settings._settings.setdefault(codes.MAX_FRAME_SIZE, collections.deque([16384]))
 
 
+def _patch_sync_alpn_extra_info() -> None:
+    """httpcore 只在 isinstance(sock, ssl.SSLSocket) 时读 ALPN。
+
+    utls 的 SSLSocket 不是 ssl.SSLSocket 子类，同步路径会把已协商的 h2
+    当成没有 ALPN，从而落到 HTTP/1.1。读 _sslobj 才能按协商结果在 h2 / 1.1 之间回退。
+    """
+    import ssl
+
+    from httpcore._backends.sync import SyncStream
+
+    orig = SyncStream.get_extra_info
+
+    def get_extra_info(self: Any, info: str) -> Any:
+        if info == "ssl_object":
+            sock = self._sock
+            if isinstance(sock, ssl.SSLSocket):
+                return sock._sslobj
+            sslobj = getattr(sock, "_sslobj", None)
+            if sslobj is not None:
+                return sslobj
+            if hasattr(sock, "selected_alpn_protocol"):
+                return sock
+        return orig(self, info)
+
+    SyncStream.get_extra_info = get_extra_info  # type: ignore[method-assign]
+
+
 def patch_httpcore_chrome_h2() -> None:
     global _PATCHED
     if _PATCHED:
         return
+
+    _patch_sync_alpn_extra_info()
 
     from httpcore._async.http2 import AsyncHTTP2Connection
     from httpcore._async.http2 import has_body_headers as async_has_body_headers
