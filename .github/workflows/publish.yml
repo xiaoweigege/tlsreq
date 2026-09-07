@@ -30,4 +30,4 @@ jobs:
             exit 1
           fi
           echo "PyPI token is set (length ${#TWINE_PASSWORD})."
-          twine upload dist/* --non-interactive
+          twine upload dist/* --non-interactive --verbose --skip-existing
