@@ -18,7 +18,7 @@ def _import_httpx():
     except ImportError as exc:
         raise BackendNotInstalled(
             "httpx backend 需要: pip install 'tlsreq[httpx]' "
-            "且 utls 用 GitHub 2026.9.4（python -m tlsreq.install_utls）"
+            "（会装 xutls，import 名仍是 utls）"
         ) from exc
     return httpx, utls
 

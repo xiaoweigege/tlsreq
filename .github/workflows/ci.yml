@@ -18,9 +18,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: |
-          pip install -e ".[httpx,niquests,wreq]"
-          python -m tlsreq.install_utls
+        run: pip install -e ".[httpx,niquests,wreq]"
       - name: Unit tests
         env:
           TLSREQ_SKIP_LIVE: "1"

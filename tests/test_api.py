@@ -4,7 +4,7 @@ from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
 from tlsreq.errors import UnknownBackend, UnknownFingerprint
 from tlsreq.response import Response, cookies_to_dict, headers_to_dict, status_code_of
-from tlsreq.utls_release import UTLS_RELEASE, utls_version, wheel_url
+from tlsreq.utls_release import UTLS_RELEASE, XUTLS_DIST, utls_version
 
 
 class ApiTests(unittest.TestCase):
@@ -44,9 +44,9 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(resp.text, '{"ok": true}')
 
     def test_utls_release_pin(self):
-        self.assertEqual(UTLS_RELEASE, "2026.9.4")
+        self.assertEqual(XUTLS_DIST, "xutls")
+        self.assertEqual(UTLS_RELEASE, "2026.9.7")
         self.assertGreaterEqual(utls_version(), UTLS_RELEASE)
-        self.assertTrue(wheel_url().startswith("https://github.com/xiaoweigege/utls/releases/download/"))
 
 
 def _can_import(name: str) -> bool:

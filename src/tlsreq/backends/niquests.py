@@ -17,7 +17,7 @@ def _import_niquests():
     except ImportError as exc:
         raise BackendNotInstalled(
             "niquests backend 需要: pip install 'tlsreq[niquests]' "
-            "且 utls 用 GitHub 2026.9.4（python -m tlsreq.install_utls）"
+            "（会装 xutls，import 名仍是 utls）"
         ) from exc
     return niquests, utls, TLSConfiguration
 

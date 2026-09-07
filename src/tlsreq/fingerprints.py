@@ -81,7 +81,7 @@ WREQ = {
     "chromestable": "Chrome149",
 }
 
-# niquests / httpx。chrome152 需要 GitHub utls 2026.9.4，不是 PyPI。
+# niquests / httpx。chrome152 需要 PyPI xutls>=2026.9.7，不要装官方 utls。
 UTLS = {
     "chrome131": "chrome:131",
     "chrome142": "chrome:142",

@@ -11,13 +11,11 @@ pip install tlsreq
 pip install "tlsreq[httpx]"      # 或 niquests / wreq / curl_cffi / all
 ```
 
-Chrome 152 不在 PyPI 的 `utls` 里。httpx / niquests 需要再装 GitHub 2026.9.4：
-
-https://github.com/xiaoweigege/utls/releases/tag/2026.9.4
+httpx / niquests 会带上 PyPI 的 `xutls`（Chrome 152，import 名仍是 `utls`）。不要再装官方 `utls`，两个包会抢同一个模块。
 
 ```bash
-python -m tlsreq.install_utls
-# 或 tlsreq-install-utls
+pip install xutls
+# 或 python -m tlsreq.install_utls
 ```
 
 ## 用法
