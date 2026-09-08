@@ -26,8 +26,8 @@ Standalone Python package at `/Users/ww/Desktop/PyCode/tlsreq`. Not part of `spi
 ## Publish
 
 - GitHub: https://github.com/xiaoweigege/tlsreq
-- PyPI: https://pypi.org/project/tlsreq/ (0.1.0, 0.1.1, 0.1.2, 0.1.3)
-- Version is `0.1.3` in `pyproject.toml` and `src/tlsreq/__init__.py`
+- PyPI: https://pypi.org/project/tlsreq/ (0.1.0, 0.1.1, 0.1.2, 0.1.3, 0.1.4)
+- Version is `0.1.4` in `pyproject.toml` and `src/tlsreq/__init__.py`
 - Publish workflow: GitHub Environment `PYPI_API_TOKEN`, secret `__TOKEN__` (not a repo secret)
 - Twine user is literal `__token__`; `twine upload dist/* --non-interactive --verbose --skip-existing`
 - Auto-publish on GitHub Release; bump version before a new upload
