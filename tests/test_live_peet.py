@@ -107,6 +107,47 @@ class LivePeetTests(unittest.TestCase):
     def test_niquests_chrome152_sync(self):
         self._assert_chrome152(_peet_sync("niquests", "chrome152"))
 
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
+    def test_httpx_google_complete_client_hints(self):
+        url = (
+            "https://www.google.com/complete/s?q=open&cp=4&client=gws-wiz"
+            "&xssi=t&hl=zh-CN"
+        )
+        headers = {
+            "accept": "*/*",
+            "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "cache-control": "no-cache",
+            "dnt": "1",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "https://www.google.com/",
+            "sec-ch-prefers-color-scheme": "dark",
+            "sec-ch-ua": '"Chromium";v="152", "Not?A_Brand";v="24", "Google Chrome";v="152"',
+            "sec-ch-ua-arch": '"arm"',
+            "sec-ch-ua-bitness": '"64"',
+            "sec-ch-ua-form-factors": '"Desktop"',
+            "sec-ch-ua-full-version": '"152.0.7977.76"',
+            "sec-ch-ua-full-version-list": (
+                '"Chromium";v="152.0.7977.76", "Not?A_Brand";v="24.0.0.0", '
+                '"Google Chrome";v="152.0.7977.76"'
+            ),
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-model": '""',
+            "sec-ch-ua-platform": '"macOS"',
+            "sec-ch-ua-platform-version": '"14.1.0"',
+            "sec-ch-ua-wow64": "?0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "user-agent": HEADERS["user-agent"],
+            "x-browser-channel": "stable",
+            "x-browser-year": "2026",
+        }
+        with Session("httpx", "chrome152", timeout=30) as session:
+            response = session.get(url, headers=headers, header_order=list(headers))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.text.startswith(")]}'") or "openai" in response.text.lower() or "[" in response.text)
+
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_sync(self):
         with Session("wreq", "chrome149", timeout=45) as session:

@@ -45,6 +45,16 @@ def _restore_local_only(settings: h2.settings.Settings) -> None:
     settings._settings.setdefault(codes.MAX_FRAME_SIZE, collections.deque([16384]))
 
 
+def _accept_advertised_decoder_limits(conn: Any) -> None:
+    """对端在收到 SETTINGS 后、ACK 回来前就会按新表编码。
+
+    h2 默认要等 ACK 才把 decoder.max_allowed_table_size 从 4096 调到 65536，
+    Google 这类对端会立刻发 table-size update=65536，解 HEADERS 直接炸。
+    """
+    conn.decoder.max_allowed_table_size = HEADER_TABLE_SIZE
+    conn.decoder.max_header_list_size = MAX_HEADER_LIST_SIZE
+
+
 def _patch_sync_alpn_extra_info() -> None:
     """httpcore 只在 isinstance(sock, ssl.SSLSocket) 时读 ALPN。
 
@@ -88,6 +98,7 @@ def patch_httpcore_chrome_h2() -> None:
         self._h2_state.local_settings = _chrome_local_settings()
         self._h2_state.initiate_connection()
         _restore_local_only(self._h2_state.local_settings)
+        _accept_advertised_decoder_limits(self._h2_state)
         self._h2_state.increment_flow_control_window(CONNECTION_WINDOW_INCREMENT)
         await self._write_outgoing_data(request)
 
@@ -95,6 +106,7 @@ def patch_httpcore_chrome_h2() -> None:
         self._h2_state.local_settings = _chrome_local_settings()
         self._h2_state.initiate_connection()
         _restore_local_only(self._h2_state.local_settings)
+        _accept_advertised_decoder_limits(self._h2_state)
         self._h2_state.increment_flow_control_window(CONNECTION_WINDOW_INCREMENT)
         self._write_outgoing_data(request)
 
