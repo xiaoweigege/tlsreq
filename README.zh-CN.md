@@ -15,19 +15,22 @@
 ## 安装
 
 ```bash
-pip install tlsreq
-pip install "tlsreq[httpx]"       # 或 niquests / wreq / curl_cffi / all
+pip install tlsreq                 # httpx + h2 + brotli + zstd + xutls
+pip install "tlsreq[niquests]"     # 或 wreq / curl_cffi / all
 ```
+
+`pip install tlsreq` 会带上默认 httpx 栈：HTTP/2（`h2`）、`br`/`zstd` 解压，以及 Chrome 152 TLS（[xutls](https://pypi.org/project/xutls/)）。
 
 | Extra | 会装上 | 说明 |
 | --- | --- | --- |
-| `httpx` | httpx, httpcore, h2, **xutls** | Chrome 152 TLS + HTTP/2 补丁 |
-| `niquests` | niquests, **xutls** | Chrome 152 TLS + HTTP/2 补丁 |
+| *（默认）* | httpx, h2, brotli, zstandard, **xutls** | Chrome 152 TLS + HTTP/2；解开 `br`/`zstd` |
+| `httpx` | *（已含在默认安装里）* | 保留 extra，旧的 `tlsreq[httpx]` 仍可用 |
+| `niquests` | niquests | Chrome 152 TLS + HTTP/2 补丁 |
 | `wreq` | wreq | 需要 Python ≥ 3.11 |
 | `curl_cffi` | curl_cffi | |
-| `all` | 以上全部 | |
+| `all` | niquests, wreq, curl_cffi | |
 
-`httpx` / `niquests` extra 会装 [xutls](https://pypi.org/project/xutls/)（import 名仍是 `utls`）。**不要再装官方 `utls`**，两个包会抢同一个模块。之后升级：`pip install -U xutls`。
+xutls 的 import 名仍是 `utls`。**不要再装官方 `utls`**，两个包会抢同一个模块。之后升级：`pip install -U xutls`。
 
 ## 快速开始
 

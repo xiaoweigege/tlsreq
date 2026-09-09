@@ -4,7 +4,13 @@ import unittest
 from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
 from tlsreq.errors import UnknownBackend, UnknownFingerprint
-from tlsreq.response import Response, cookies_to_dict, headers_to_dict, status_code_of
+from tlsreq.response import (
+    Response,
+    cookies_to_dict,
+    headers_to_dict,
+    status_code_of,
+    unwrap_http_body,
+)
 from tlsreq.utls_release import UTLS_RELEASE, XUTLS_DIST, fingerprint_from_preset
 
 
@@ -51,6 +57,37 @@ class ApiTests(unittest.TestCase):
         )
         self.assertEqual(resp.json(), {"ok": True})
         self.assertEqual(resp.text, '{"ok": true}')
+
+    def test_text_latin1_fallback(self):
+        raw = b"@\\\x00\x80"
+        resp = Response(status_code=200, content=raw, headers={}, url="https://example.com")
+        self.assertEqual(resp.text, raw.decode("latin-1"))
+        self.assertNotIn("\ufffd", resp.text)
+
+    def test_unwrap_stale_br_header(self):
+        body = b"(function hello(){})"
+        headers = {
+            "content-encoding": "br",
+            "content-length": "20",
+            "content-type": "application/javascript",
+        }
+        out, hdrs = unwrap_http_body(body, headers)
+        self.assertEqual(out, body)
+        self.assertNotIn("content-encoding", {key.lower() for key in hdrs})
+        self.assertEqual(hdrs.get("content-type"), "application/javascript")
+
+    @unittest.skipUnless(_can_import("brotli"), "brotli not installed")
+    def test_unwrap_real_brotli(self):
+        import brotli
+
+        plain = b"(function nVhYtyFXrA(){})"
+        compressed = brotli.compress(plain)
+        out, hdrs = unwrap_http_body(
+            compressed,
+            {"content-encoding": "br", "content-type": "application/javascript"},
+        )
+        self.assertEqual(out, plain)
+        self.assertNotIn("content-encoding", {key.lower() for key in hdrs})
 
     @unittest.skipUnless(_can_import("utls"), "utls not installed")
     def test_chrome152_preset(self):

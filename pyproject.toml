@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tlsreq"
-version = "0.1.4"
+version = "0.1.5"
 description = "Unified async/sync HTTP client over curl_cffi, wreq, niquests+utls, and httpx+utls"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -19,18 +19,25 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Typing :: Typed",
 ]
+# 裸装即带默认 httpx 栈（h2 / brotli / zstd / xutls）。Chrome 152 的 TLS 在 xutls。
+dependencies = [
+    "httpx[brotli,http2]>=0.27",
+    "h2>=4.1",
+    "brotli>=1.1",
+    "zstandard>=0.23",
+    "xutls>=2026.9.7",
+]
 
 [project.optional-dependencies]
 # Chrome 152 在 PyPI 的 xutls（import 仍是 utls）。不要装官方 utls。
 curl_cffi = ["curl_cffi>=0.13"]
 wreq = ["wreq>=0.12"]
-niquests = ["niquests>=3.0", "xutls>=2026.9.7"]
-httpx = ["httpx>=0.27", "httpcore>=1.0", "h2>=4.1", "xutls>=2026.9.7"]
+niquests = ["niquests>=3.0"]
+httpx = ["httpx[brotli,http2]>=0.27"]
 all = [
     "tlsreq[curl_cffi]",
     "tlsreq[wreq]",
     "tlsreq[niquests]",
-    "tlsreq[httpx]",
 ]
 
 [project.urls]

@@ -6,7 +6,14 @@ from typing import Any, Optional
 from ..chrome_h2 import chrome_http1_header_name
 from ..errors import BackendNotInstalled
 from ..fingerprints import resolve
-from ..response import Response, cookies_to_dict, headers_to_dict, http_version_of, status_code_of
+from ..response import (
+    Response,
+    cookies_to_dict,
+    headers_to_dict,
+    http_version_of,
+    status_code_of,
+    unwrap_http_body,
+)
 from ..utls_release import fingerprint_from_preset
 from .base import AsyncBackend, SyncBackend, merge_extra, split_data
 
@@ -17,8 +24,8 @@ def _import_httpx():
         import utls
     except ImportError as exc:
         raise BackendNotInstalled(
-            "httpx backend 需要: pip install 'tlsreq[httpx]' "
-            "（会装 xutls，import 名仍是 utls）"
+            "httpx backend 需要: pip install tlsreq "
+            "（会装 httpx / h2 / brotli / zstandard / xutls；import 名仍是 utls）"
         ) from exc
     return httpx, utls
 
@@ -170,10 +177,13 @@ async def _on_request_async(request: Any) -> None:
 
 
 def _wrap(resp: Any) -> Response:
+    content = resp.content or b""
+    headers = headers_to_dict(resp.headers)
+    content, headers = unwrap_http_body(content, headers)
     return Response(
         status_code=status_code_of(resp),
-        content=resp.content or b"",
-        headers=headers_to_dict(resp.headers),
+        content=content,
+        headers=headers,
         url=str(resp.url),
         cookies=cookies_to_dict(resp.cookies),
         http_version=http_version_of(resp),

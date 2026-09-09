@@ -4,7 +4,14 @@ from typing import Any, Optional
 
 from ..errors import BackendNotInstalled
 from ..fingerprints import resolve
-from ..response import Response, cookies_to_dict, headers_to_dict, http_version_of, status_code_of
+from ..response import (
+    Response,
+    cookies_to_dict,
+    headers_to_dict,
+    http_version_of,
+    status_code_of,
+    unwrap_http_body,
+)
 from ..utls_release import fingerprint_from_preset
 from .base import AsyncBackend, SyncBackend, merge_extra
 
@@ -71,10 +78,12 @@ def _apply_patches(h2_patch: bool, h1_patch: bool) -> None:
 
 def _wrap(resp: Any) -> Response:
     content = resp.content if isinstance(resp.content, (bytes, bytearray)) else bytes(resp.content or b"")
+    headers = headers_to_dict(resp.headers)
+    content, headers = unwrap_http_body(content, headers)
     return Response(
         status_code=status_code_of(resp),
         content=content,
-        headers=headers_to_dict(resp.headers),
+        headers=headers,
         url=str(resp.url),
         cookies=cookies_to_dict(getattr(resp, "cookies", None)),
         http_version=http_version_of(resp),

@@ -66,6 +66,56 @@ def status_code_of(resp: Any) -> int:
         return int(getattr(value, "value", 0) or 0)
 
 
+def decode_body_text(content: bytes, encoding: str = "utf-8") -> str:
+    """明文 UTF-8；二进制/解压失败的脚本回退 latin-1，避免 U+FFFD 毁掉 JS。"""
+    try:
+        return content.decode(encoding)
+    except UnicodeDecodeError:
+        return content.decode("latin-1")
+
+
+def unwrap_http_body(
+    content: bytes,
+    headers: dict[str, str],
+) -> tuple[bytes, dict[str, str]]:
+    """httpx 解完 br 后有时还留着 content-encoding。能解就解，解不了当已是明文并去掉该头。"""
+    encoding = ""
+    for key, value in headers.items():
+        if key.lower() == "content-encoding":
+            encoding = value.lower().strip()
+            break
+    if not encoding or encoding == "identity":
+        return content, headers
+
+    decoded = None
+    if encoding == "br":
+        try:
+            import brotli
+            decoded = brotli.decompress(content)
+        except Exception:
+            decoded = None
+    elif encoding in ("zstd", "zst"):
+        try:
+            import zstandard
+            decoded = zstandard.decompress(content)
+        except Exception:
+            decoded = None
+    elif encoding == "gzip":
+        try:
+            import gzip
+            decoded = gzip.decompress(content)
+        except Exception:
+            decoded = None
+
+    body = decoded if decoded is not None else content
+    cleaned = {
+        key: value
+        for key, value in headers.items()
+        if key.lower() not in ("content-encoding", "content-length")
+    }
+    return body, cleaned
+
+
 def http_version_of(resp: Any) -> Optional[str]:
     value = getattr(resp, "http_version", None)
     if value is None:
@@ -106,7 +156,7 @@ class Response:
 
     @property
     def text(self) -> str:
-        return self.content.decode(self.encoding, errors="replace")
+        return decode_body_text(self.content, self.encoding)
 
     def json(self) -> Any:
         return json.loads(self.text)

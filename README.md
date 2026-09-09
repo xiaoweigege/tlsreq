@@ -15,19 +15,22 @@ Change `backend` and `impersonate`. Request code stays the same.
 ## Install
 
 ```bash
-pip install tlsreq
-pip install "tlsreq[httpx]"       # or niquests / wreq / curl_cffi / all
+pip install tlsreq                 # httpx + h2 + brotli + zstd + xutls
+pip install "tlsreq[niquests]"     # or wreq / curl_cffi / all
 ```
+
+`pip install tlsreq` pulls the default httpx stack: HTTP/2 (`h2`), `br`/`zstd` body decoding, and Chrome 152 TLS via [xutls](https://pypi.org/project/xutls/).
 
 | Extra | Pulls in | Notes |
 | --- | --- | --- |
-| `httpx` | httpx, httpcore, h2, **xutls** | Chrome 152 TLS + HTTP/2 patches |
-| `niquests` | niquests, **xutls** | Chrome 152 TLS + HTTP/2 patches |
+| *(default)* | httpx, h2, brotli, zstandard, **xutls** | Chrome 152 TLS + HTTP/2; decodes `br`/`zstd` |
+| `httpx` | *(already in the default install)* | Kept so `tlsreq[httpx]` still works |
+| `niquests` | niquests | Chrome 152 TLS + HTTP/2 patches |
 | `wreq` | wreq | Requires Python ≥ 3.11 |
 | `curl_cffi` | curl_cffi | |
-| `all` | everything above | |
+| `all` | niquests, wreq, curl_cffi | |
 
-`httpx` / `niquests` extras install [xutls](https://pypi.org/project/xutls/) (import name is still `utls`). Do **not** also install the upstream `utls` package — both provide the `utls` module. To upgrade later: `pip install -U xutls`.
+xutls import name is still `utls`. Do **not** also install the upstream `utls` package — both provide the `utls` module. To upgrade later: `pip install -U xutls`.
 
 ## Quick start
 
