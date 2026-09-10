@@ -14,7 +14,7 @@ def _import_wreq():
         import wreq
     except ImportError as exc:
         raise BackendNotInstalled(
-            "wreq backend 需要: pip install 'tlsreq[wreq]'"
+            "wreq backend 需要 Python >= 3.11，以及: pip install 'tlsreq[wreq]'"
         ) from exc
     return wreq
 

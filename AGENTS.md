@@ -26,8 +26,8 @@ Standalone Python package at `/Users/ww/Desktop/PyCode/tlsreq`. Not part of `spi
 ## Publish
 
 - GitHub: https://github.com/xiaoweigege/tlsreq
-- PyPI: https://pypi.org/project/tlsreq/ (0.1.0 … 0.1.5)
-- Version is `0.1.5` in `pyproject.toml` and `src/tlsreq/__init__.py`
+- PyPI: https://pypi.org/project/tlsreq/ (0.1.0 … 0.1.6)
+- Version is `0.1.6` in `pyproject.toml` and `src/tlsreq/__init__.py`
 - Bare `tlsreq` pulls `httpx` + `h2` + `brotli` + `zstandard` + `xutls`; otherwise Chrome `br`/`zstd` bodies stay compressed and `.text` corrupts binary JS
 - Publish workflow: GitHub Environment `PYPI_API_TOKEN`, secret `__TOKEN__` (not a repo secret)
 - Twine user is literal `__token__`; `twine upload dist/* --non-interactive --verbose --skip-existing`

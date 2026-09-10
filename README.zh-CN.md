@@ -26,9 +26,9 @@ pip install "tlsreq[niquests]"     # 或 wreq / curl_cffi / all
 | *（默认）* | httpx, h2, brotli, zstandard, **xutls** | Chrome 152 TLS + HTTP/2；解开 `br`/`zstd` |
 | `httpx` | *（已含在默认安装里）* | 保留 extra，旧的 `tlsreq[httpx]` 仍可用 |
 | `niquests` | niquests | Chrome 152 TLS + HTTP/2 补丁 |
-| `wreq` | wreq | 需要 Python ≥ 3.11 |
+| `wreq` | wreq | 仅 Python ≥ 3.11；3.9/3.10 会跳过 |
 | `curl_cffi` | curl_cffi | |
-| `all` | niquests, wreq, curl_cffi | |
+| `all` | niquests, curl_cffi；Python ≥ 3.11 时再带 wreq | |
 
 xutls 的 import 名仍是 `utls`。**不要再装官方 `utls`**，两个包会抢同一个模块。之后升级：`pip install -U xutls`。
 

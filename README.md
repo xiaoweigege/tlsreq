@@ -26,9 +26,9 @@ pip install "tlsreq[niquests]"     # or wreq / curl_cffi / all
 | *(default)* | httpx, h2, brotli, zstandard, **xutls** | Chrome 152 TLS + HTTP/2; decodes `br`/`zstd` |
 | `httpx` | *(already in the default install)* | Kept so `tlsreq[httpx]` still works |
 | `niquests` | niquests | Chrome 152 TLS + HTTP/2 patches |
-| `wreq` | wreq | Requires Python ≥ 3.11 |
+| `wreq` | wreq | Python ≥ 3.11 only; skipped on 3.9/3.10 |
 | `curl_cffi` | curl_cffi | |
-| `all` | niquests, wreq, curl_cffi | |
+| `all` | niquests, curl_cffi; wreq if Python ≥ 3.11 | |
 
 xutls import name is still `utls`. Do **not** also install the upstream `utls` package — both provide the `utls` module. To upgrade later: `pip install -U xutls`.
 

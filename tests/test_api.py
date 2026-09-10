@@ -1,5 +1,7 @@
 import asyncio
+import tomllib
 import unittest
+from pathlib import Path
 
 from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
@@ -98,6 +100,12 @@ class ApiTests(unittest.TestCase):
         fp = fingerprint_from_preset(utls, "chrome:152")
         ja4 = str(getattr(fp, "ja4_hash", ""))
         self.assertTrue(ja4.startswith("t13d1517h2"), ja4)
+
+    def test_wreq_extra_is_python_311(self):
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        extras = data["project"]["optional-dependencies"]
+        self.assertEqual(extras["wreq"], ["wreq>=0.12; python_version >= '3.11'"])
 
 
 class ConstructTests(unittest.TestCase):
