@@ -105,16 +105,16 @@ httpx / niquests 同时开 HTTP/2 和 HTTP/1.1，按 TLS ALPN 协商结果选协
 
 ```python
 Session(
-    backend: str,
-    impersonate: str | None = None,
+    backend: BackendName = "httpx",
+    impersonate: ImpersonateName | None = None,
     *,
     proxy: str | None = None,
     timeout: float = 30,
     verify: bool = True,
-    headers: dict | None = None,
-    cookies: dict | None = None,
+    headers: Mapping[str, str] | None = None,
+    cookies: Mapping[str, str] | None = None,
     allow_redirects: bool = True,
-    extra: dict | None = None,
+    extra: dict[str, Any] | None = None,
 )
 ```
 

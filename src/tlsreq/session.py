@@ -1,83 +1,259 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from collections.abc import Mapping
+from typing import Any
 
 from .backends import create_async_backend, create_sync_backend
+from .backends.base import AsyncBackend, SyncBackend
 from .response import Response
+from .types import BackendName, ImpersonateName
 
-_HTTP_METHODS = ("get", "post", "put", "patch", "delete", "head", "options")
 
-
-class _Facade:
-    def __init__(self, backend: str, impersonate: Optional[str], impl: Any) -> None:
+class Session:
+    def __init__(
+        self,
+        backend: BackendName = "httpx",
+        impersonate: ImpersonateName | None = None,
+        *,
+        proxy: str | None = None,
+        timeout: float = 30,
+        verify: bool = True,
+        headers: Mapping[str, str] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        allow_redirects: bool = True,
+        extra: dict[str, Any] | None = None,
+    ) -> None:
         self.backend = backend
         self.impersonate = impersonate
-        self._impl = impl
+        self._impl: SyncBackend = create_sync_backend(
+            backend,
+            impersonate=impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=dict(headers) if headers is not None else None,
+            cookies=dict(cookies) if cookies is not None else None,
+            allow_redirects=allow_redirects,
+            extra=extra,
+        )
 
     @property
     def cookies(self) -> dict[str, str]:
         return self._impl.get_cookies()
 
-    def set_cookies(self, cookies: dict[str, str], url: Optional[str] = None) -> None:
-        self._impl.set_cookies(cookies, url=url)
+    def set_cookies(self, cookies: Mapping[str, str], url: str | None = None) -> None:
+        self._impl.set_cookies(dict(cookies), url=url)
 
     @property
     def raw(self) -> Any:
         return self._impl.raw
-
-
-class Session(_Facade):
-    def __init__(
-        self,
-        backend: str,
-        impersonate: Optional[str] = None,
-        *,
-        proxy: Optional[str] = None,
-        timeout: float = 30,
-        verify: bool = True,
-        headers: Optional[dict] = None,
-        cookies: Optional[dict] = None,
-        allow_redirects: bool = True,
-        extra: Optional[dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(
-            backend,
-            impersonate,
-            create_sync_backend(
-                backend,
-                impersonate=impersonate,
-                proxy=proxy,
-                timeout=timeout,
-                verify=verify,
-                headers=headers,
-                cookies=cookies,
-                allow_redirects=allow_redirects,
-                extra=extra,
-            ),
-        )
 
     def request(
         self,
         method: str,
         url: str,
         *,
-        headers: Optional[dict] = None,
-        params: Optional[dict] = None,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
         data: Any = None,
         json: Any = None,
-        cookies: Optional[dict] = None,
-        timeout: Any = None,
-        allow_redirects: Optional[bool] = None,
-        header_order: Optional[list[str]] = None,
-        extra: Optional[dict[str, Any]] = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> Response:
         return self._impl.request(
             method.upper(),
+            url,
+            headers=dict(headers) if headers is not None else None,
+            params=dict(params) if params is not None else None,
+            data=data,
+            json=json,
+            cookies=dict(cookies) if cookies is not None else None,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def get(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "GET",
+            url,
+            headers=headers,
+            params=params,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def post(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "POST",
             url,
             headers=headers,
             params=params,
             data=data,
             json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def put(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "PUT",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def patch(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "PATCH",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def delete(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "DELETE",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def head(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "HEAD",
+            url,
+            headers=headers,
+            params=params,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    def options(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return self.request(
+            "OPTIONS",
+            url,
+            headers=headers,
+            params=params,
             cookies=cookies,
             timeout=timeout,
             allow_redirects=allow_redirects,
@@ -88,60 +264,121 @@ class Session(_Facade):
     def close(self) -> None:
         self._impl.close()
 
-    def __enter__(self) -> "Session":
+    def __enter__(self) -> Session:
         return self
 
     def __exit__(self, *exc: Any) -> None:
         self.close()
 
 
-class AsyncSession(_Facade):
+class AsyncSession:
     def __init__(
         self,
-        backend: str,
-        impersonate: Optional[str] = None,
+        backend: BackendName = "httpx",
+        impersonate: ImpersonateName | None = None,
         *,
-        proxy: Optional[str] = None,
+        proxy: str | None = None,
         timeout: float = 30,
         verify: bool = True,
-        headers: Optional[dict] = None,
-        cookies: Optional[dict] = None,
+        headers: Mapping[str, str] | None = None,
+        cookies: Mapping[str, str] | None = None,
         allow_redirects: bool = True,
-        extra: Optional[dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
-        super().__init__(
+        self.backend = backend
+        self.impersonate = impersonate
+        self._impl: AsyncBackend = create_async_backend(
             backend,
-            impersonate,
-            create_async_backend(
-                backend,
-                impersonate=impersonate,
-                proxy=proxy,
-                timeout=timeout,
-                verify=verify,
-                headers=headers,
-                cookies=cookies,
-                allow_redirects=allow_redirects,
-                extra=extra,
-            ),
+            impersonate=impersonate,
+            proxy=proxy,
+            timeout=timeout,
+            verify=verify,
+            headers=dict(headers) if headers is not None else None,
+            cookies=dict(cookies) if cookies is not None else None,
+            allow_redirects=allow_redirects,
+            extra=extra,
         )
+
+    @property
+    def cookies(self) -> dict[str, str]:
+        return self._impl.get_cookies()
+
+    def set_cookies(self, cookies: Mapping[str, str], url: str | None = None) -> None:
+        self._impl.set_cookies(dict(cookies), url=url)
+
+    @property
+    def raw(self) -> Any:
+        return self._impl.raw
 
     async def request(
         self,
         method: str,
         url: str,
         *,
-        headers: Optional[dict] = None,
-        params: Optional[dict] = None,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
         data: Any = None,
         json: Any = None,
-        cookies: Optional[dict] = None,
-        timeout: Any = None,
-        allow_redirects: Optional[bool] = None,
-        header_order: Optional[list[str]] = None,
-        extra: Optional[dict[str, Any]] = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> Response:
         return await self._impl.request(
             method.upper(),
+            url,
+            headers=dict(headers) if headers is not None else None,
+            params=dict(params) if params is not None else None,
+            data=data,
+            json=json,
+            cookies=dict(cookies) if cookies is not None else None,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def get(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "GET",
+            url,
+            headers=headers,
+            params=params,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def post(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "POST",
             url,
             headers=headers,
             params=params,
@@ -154,34 +391,143 @@ class AsyncSession(_Facade):
             extra=extra,
         )
 
+    async def put(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "PUT",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def patch(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "PATCH",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def delete(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any = None,
+        json: Any = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "DELETE",
+            url,
+            headers=headers,
+            params=params,
+            data=data,
+            json=json,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def head(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "HEAD",
+            url,
+            headers=headers,
+            params=params,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
+    async def options(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        cookies: Mapping[str, str] | None = None,
+        timeout: float | None = None,
+        allow_redirects: bool | None = None,
+        header_order: list[str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> Response:
+        return await self.request(
+            "OPTIONS",
+            url,
+            headers=headers,
+            params=params,
+            cookies=cookies,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            header_order=header_order,
+            extra=extra,
+        )
+
     async def close(self) -> None:
         await self._impl.aclose()
 
-    async def __aenter__(self) -> "AsyncSession":
+    async def __aenter__(self) -> AsyncSession:
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
         await self.close()
-
-
-def _sync_http(verb: str):
-    def method(self: Session, url: str, **kwargs: Any) -> Response:
-        return self.request(verb, url, **kwargs)
-
-    method.__name__ = verb.lower()
-    method.__qualname__ = f"Session.{verb.lower()}"
-    return method
-
-
-def _async_http(verb: str):
-    async def method(self: AsyncSession, url: str, **kwargs: Any) -> Response:
-        return await self.request(verb, url, **kwargs)
-
-    method.__name__ = verb.lower()
-    method.__qualname__ = f"AsyncSession.{verb.lower()}"
-    return method
-
-
-for _verb in _HTTP_METHODS:
-    setattr(Session, _verb, _sync_http(_verb.upper()))
-    setattr(AsyncSession, _verb, _async_http(_verb.upper()))

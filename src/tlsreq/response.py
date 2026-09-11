@@ -133,6 +133,15 @@ def http_version_of(resp: Any) -> Optional[str]:
 class Response:
     """统一响应。body 在包装时已读完，`.text` / `.json()` 都是同步的。"""
 
+    status_code: int
+    content: bytes
+    headers: dict[str, str]
+    url: str
+    cookies: dict[str, str]
+    http_version: Optional[str]
+    encoding: str
+    raw: Any
+
     def __init__(
         self,
         *,

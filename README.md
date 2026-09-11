@@ -105,16 +105,16 @@ Checked against [tls.peet.ws](https://tls.peet.ws/api/all).
 
 ```python
 Session(
-    backend: str,
-    impersonate: str | None = None,
+    backend: BackendName = "httpx",
+    impersonate: ImpersonateName | None = None,
     *,
     proxy: str | None = None,
     timeout: float = 30,
     verify: bool = True,
-    headers: dict | None = None,
-    cookies: dict | None = None,
+    headers: Mapping[str, str] | None = None,
+    cookies: Mapping[str, str] | None = None,
     allow_redirects: bool = True,
-    extra: dict | None = None,
+    extra: dict[str, Any] | None = None,
 )
 ```
 

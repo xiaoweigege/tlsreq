@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import tomllib
 import unittest
 from pathlib import Path
@@ -28,6 +29,16 @@ class ApiTests(unittest.TestCase):
     def test_unknown_backend(self):
         with self.assertRaises(UnknownBackend):
             Session("not-a-backend")
+
+    def test_http_methods_are_explicit(self):
+        for name in ("get", "post", "put", "patch", "delete", "head", "options"):
+            method = getattr(Session, name)
+            self.assertTrue(callable(method), name)
+            self.assertEqual(method.__name__, name)
+            params = inspect.signature(method).parameters
+            self.assertIn("url", params)
+            self.assertIn("headers", params)
+            self.assertIn("header_order", params)
 
     def test_merge_extra_overrides(self):
         out = merge_extra({"timeout": 30, "verify": True}, {"timeout": 5, "ja3": "x"})
@@ -109,6 +120,12 @@ class ApiTests(unittest.TestCase):
 
 
 class ConstructTests(unittest.TestCase):
+    @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
+    def test_default_backend_is_httpx(self):
+        s = Session(impersonate="chrome152")
+        self.assertEqual(s.backend, "httpx")
+        s.close()
+
     @unittest.skipUnless(_can_import("httpx") and _can_import("utls"), "httpx/utls not installed")
     def test_httpx_sync_and_async_construct(self):
         from tlsreq import AsyncSession
