@@ -36,12 +36,12 @@ xutls import name is still `utls`. Do **not** also install the upstream `utls` p
 
 ```python
 import asyncio
-from tlsreq import AsyncSession, Session
+from tlsreq import AsyncSession, Session, niquests, wreq
 
 async def main():
     async with AsyncSession(
-        backend="niquests",
-        impersonate="chrome152",
+        backend=niquests,
+        impersonate=niquests.chrome152,
         proxy="http://user:pass@host:port",
         timeout=30,
         extra={"pool_maxsize": 1},
@@ -60,7 +60,7 @@ async def main():
 
 asyncio.run(main())
 
-with Session("wreq", "chrome149", proxy="http://127.0.0.1:7890") as s:
+with Session(wreq, wreq.chrome154, proxy="http://127.0.0.1:7890") as s:
     r = s.get("https://example.com")
     print(r.status_code, r.headers)
 ```
@@ -74,11 +74,11 @@ The native client is on `session.raw` when you need a backend-specific knob.
 | `niquests` | `chrome:152` | `chrome152` | yes | yes |
 | `httpx` | `chrome:152` | `chrome152` | yes | yes |
 | `curl_cffi` | `chrome150` | `chrome150` | yes | yes |
-| `wreq` | `Chrome149` | `chrome149` | yes | yes |
+| `wreq` | `Chrome154` | `chrome154` | yes | yes |
 
 Unknown `backend` or `impersonate` values raise. There is no silent fallback to another profile.
 
-`chrome` / `chromestable` map to that backend’s current default. `wreq` also accepts its native names (`Firefox151`, `Safari18_5`, `Edge148`, `Opera131`, `OkHttp5`, …). `curl_cffi` accepts `firefox`, `safari`, `edge`, `chrome_android`, `tor`, and the library’s versioned profiles.
+`chrome` / `chromestable` map to that backend’s current default. Fingerprints are attributes on the library object, so the editor lists only that library: `Session(wreq, wreq.chrome154)`, `Session(httpx, httpx.chrome152)`, `Session(curl_cffi, curl_cffi.chrome150)`. `wreq` includes `chrome154`, `firefox152`, `safari26_4`, `edge148`, `opera131`, and `okhttp5`. `httpx` and `niquests`, along with `nirequest`, `nirequests`, and `nio`, have the eight xutls presets (`chrome131`, `chrome142`, `chrome146`, `chrome148`, `chrome150`, `chrome152`, `chrome`, `chromestable`). `curl`, `cffi`, and `curl_cffi` share the curl_cffi list. `Session(wreq, "chrome154")` and `Session("wreq", "chrome154")` still run. A quoted fingerprint string does not offer that list. `Session(impersonate=...)` defaults to `httpx`.
 
 httpx / niquests offer both HTTP/2 and HTTP/1.1. The protocol is chosen from the negotiated TLS ALPN (`h2` vs `http/1.1`); an HTTP/1.1-only origin falls back instead of failing.
 
@@ -105,8 +105,8 @@ Checked against [tls.peet.ws](https://tls.peet.ws/api/all).
 
 ```python
 Session(
-    backend: BackendName = "httpx",
-    impersonate: ImpersonateName | None = None,
+    backend: Backend[Imp] | str = httpx,
+    impersonate: Imp | None = None,
     *,
     proxy: str | None = None,
     timeout: float = 30,
@@ -117,6 +117,8 @@ Session(
     extra: dict[str, Any] | None = None,
 )
 ```
+
+`httpx`, `niquests`, `wreq`, and `curl_cffi` are `Backend` objects exported by `tlsreq`. Import the one you pass in, then pass one of its fingerprint attributes: `Session(wreq, wreq.chrome154)`. `AsyncSession` has the same signature.
 
 Context-manager safe. `AsyncSession` methods are coroutines.
 

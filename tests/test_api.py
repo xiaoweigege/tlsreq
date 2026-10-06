@@ -3,6 +3,7 @@ import inspect
 import tomllib
 import unittest
 from pathlib import Path
+from typing import get_args, get_origin
 
 from tlsreq import Session
 from tlsreq.backends.base import merge_extra, split_data
@@ -116,7 +117,7 @@ class ApiTests(unittest.TestCase):
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
         extras = data["project"]["optional-dependencies"]
-        self.assertEqual(extras["wreq"], ["wreq>=0.12; python_version >= '3.11'"])
+        self.assertEqual(extras["wreq"], ["wreq>=0.13.0; python_version >= '3.11'"])
 
 
 class ConstructTests(unittest.TestCase):
@@ -130,9 +131,16 @@ class ConstructTests(unittest.TestCase):
     def test_httpx_sync_and_async_construct(self):
         from tlsreq import AsyncSession
 
-        s = Session("httpx", "chrome152")
+        from tlsreq import httpx
+
+        s = Session(httpx, httpx.chrome152)
+        self.assertEqual(s.backend, "httpx")
+        self.assertEqual(s.impersonate, "chrome152")
         self.assertEqual(type(s.raw).__name__, "Client")
         s.close()
+        quoted = Session("httpx", "chrome152")
+        self.assertEqual(quoted.backend, "httpx")
+        quoted.close()
         async_s = AsyncSession("httpx", "chrome152")
         self.assertEqual(type(async_s.raw).__name__, "AsyncClient")
         asyncio.run(async_s.close())
@@ -148,11 +156,114 @@ class ConstructTests(unittest.TestCase):
         self.assertTrue(hasattr(async_s.raw, "request"))
         asyncio.run(async_s.close())
 
+    def test_constructor_literals_are_split(self):
+        from tlsreq import AsyncSession
+        from tlsreq.types import (
+            Backend,
+            CurlCffi,
+            CurlCffiImpersonate,
+            Utls,
+            UtlsImpersonate,
+            Wreq,
+            WreqImpersonate,
+            cffi,
+            curl,
+            curl_cffi,
+            httpx,
+            nio,
+            niquests,
+            nirequest,
+            nirequests,
+            wreq,
+        )
+
+        expected = {
+            "wreq": (wreq, Wreq, WreqImpersonate),
+            "curl_cffi": (curl_cffi, CurlCffi, CurlCffiImpersonate),
+            "curl": (curl, CurlCffi, CurlCffiImpersonate),
+            "cffi": (cffi, CurlCffi, CurlCffiImpersonate),
+            "httpx": (httpx, Utls, UtlsImpersonate),
+            "niquests": (niquests, Utls, UtlsImpersonate),
+            "nirequest": (nirequest, Utls, UtlsImpersonate),
+            "nirequests": (nirequests, Utls, UtlsImpersonate),
+            "nio": (nio, Utls, UtlsImpersonate),
+        }
+        for key, (token, cls, impersonate) in expected.items():
+            self.assertIsInstance(token, cls)
+            self.assertEqual(token.name, key)
+            base = cls.__orig_bases__[0]
+            self.assertIs(get_origin(base), Backend)
+            self.assertEqual(get_args(base), (impersonate,))
+            literal_names = set(get_args(impersonate))
+            attr_names = {
+                name
+                for name, value in vars(cls).items()
+                if isinstance(value, str) and not name.startswith("_")
+            }
+            self.assertEqual(attr_names, literal_names)
+            for name in literal_names:
+                self.assertEqual(getattr(token, name), name)
+
+        with self.assertRaises(AttributeError):
+            httpx.firefox152
+        with self.assertRaises(AttributeError):
+            curl_cffi.chrome154
+        with self.assertRaises(AttributeError):
+            wreq.tor145
+
+        for cls in (Session, AsyncSession):
+            backend_hint = cls.__init__.__annotations__["backend"]
+            impersonate_hint = cls.__init__.__annotations__["impersonate"]
+            self.assertIn("Backend", backend_hint)
+            self.assertIn("str", backend_hint)
+            self.assertIn("_Imp", impersonate_hint)
+            self.assertFalse(hasattr(cls, "wreq"))
+            self.assertFalse(hasattr(cls, "curl_cffi"))
+
+    def test_backend_rejects_other_types(self):
+        with self.assertRaises(TypeError):
+            Session(1)  # type: ignore[arg-type]
+
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_construct(self):
-        s = Session("wreq", "chrome149")
+        s = Session("wreq", "chrome154")
         self.assertTrue(s.raw is not None)
         s.close()
+
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
+    def test_wreq_object(self):
+        from tlsreq import AsyncSession, wreq
+
+        s = Session(wreq, wreq.chrome154)
+        self.assertEqual(s.backend, "wreq")
+        self.assertEqual(s.impersonate, "chrome154")
+        self.assertTrue(s.raw is not None)
+        s.close()
+        alias = Session(wreq, "Firefox152")
+        self.assertEqual(alias.backend, "wreq")
+        self.assertEqual(alias.impersonate, "Firefox152")
+        alias.close()
+        async_s = AsyncSession(wreq, "chrome154")
+        self.assertEqual(async_s.backend, "wreq")
+        self.assertEqual(async_s.impersonate, "chrome154")
+        asyncio.run(async_s.close())
+
+    @unittest.skipUnless(_can_import("curl_cffi"), "curl_cffi not installed")
+    def test_curl_cffi_object(self):
+        from tlsreq import AsyncSession, curl, curl_cffi
+
+        s = Session(curl_cffi, curl_cffi.chrome150)
+        self.assertEqual(s.backend, "curl_cffi")
+        self.assertEqual(s.impersonate, "chrome150")
+        self.assertTrue(s.raw is not None)
+        s.close()
+        alias = Session(curl, "chrome150")
+        self.assertEqual(alias.backend, "curl")
+        self.assertEqual(alias.impersonate, "chrome150")
+        alias.close()
+        async_s = AsyncSession(curl_cffi, "chrome150")
+        self.assertEqual(async_s.backend, "curl_cffi")
+        asyncio.run(async_s.close())
 
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_other_fingerprints(self):

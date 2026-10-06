@@ -150,7 +150,7 @@ class LivePeetTests(unittest.TestCase):
 
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_sync(self):
-        with Session("wreq", "chrome149", timeout=45) as session:
+        with Session("wreq", "chrome154", timeout=45) as session:
             response = session.get(PEET, headers=HEADERS)
         self.assertEqual(response.status_code, 200)
         self.assertIn("tls", response.json())
@@ -158,7 +158,7 @@ class LivePeetTests(unittest.TestCase):
     @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
     def test_wreq_async(self):
         async def _run():
-            async with AsyncSession("wreq", "chrome149", timeout=45) as session:
+            async with AsyncSession("wreq", "chrome154", timeout=45) as session:
                 return await session.get(PEET, headers=HEADERS)
 
         response = asyncio.run(_run())

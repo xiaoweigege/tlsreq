@@ -5,7 +5,7 @@ Standalone Python package at `/Users/ww/Desktop/PyCode/tlsreq`. Not part of `spi
 ## Package
 
 - Layout: `src/tlsreq/`
-- Python: local conda `spider-open-api-3.12`; CI 3.11 / 3.12 (`wreq>=0.12` needs >=3.11)
+- Python: local conda `spider-open-api-3.12`; CI 3.11 / 3.12 (`wreq>=0.13` needs >=3.11)
 - Install: `pip install -e .`（硬依赖 httpx / h2 / brotli / zstandard / xutls）；其它栈 `pip install -e ".[niquests,wreq]"`
 - Tests: `python -m unittest discover -s tests -v -p 'test_*.py'`
 - Live peet tests: unset `TLSREQ_SKIP_LIVE`; CI sets `TLSREQ_SKIP_LIVE=1`
@@ -14,7 +14,7 @@ Standalone Python package at `/Users/ww/Desktop/PyCode/tlsreq`. Not part of `spi
 
 - `Session` / `AsyncSession(backend="httpx", impersonate, proxy, extra=)`；`get`/`post` 等是显式方法，给 IDE 补全用
 - Backends: `curl_cffi`, `wreq`, `niquests`, `httpx`
-- `chrome152` maps to curl_cffi `chrome150` / wreq `Chrome149` / utls `chrome:152`
+- `chrome152` on wreq is native `Chrome152`; utls is `chrome:152`. curl_cffi’s newest Chrome profile is `chrome150`. wreq default / `chrome` alias is `Chrome154`
 - `extra=` is backend-specific kwargs only
 - Do not migrate `get_abck_*` into this package
 
@@ -26,8 +26,8 @@ Standalone Python package at `/Users/ww/Desktop/PyCode/tlsreq`. Not part of `spi
 ## Publish
 
 - GitHub: https://github.com/xiaoweigege/tlsreq
-- PyPI: https://pypi.org/project/tlsreq/ (0.1.0 … 0.1.7)
-- Version is `0.1.7` in `pyproject.toml` and `src/tlsreq/__init__.py`
+- PyPI: https://pypi.org/project/tlsreq/ (0.1.0 … 0.1.8)
+- Version is `0.1.8` in `pyproject.toml` and `src/tlsreq/__init__.py`
 - Bare `tlsreq` pulls `httpx` + `h2` + `brotli` + `zstandard` + `xutls`; otherwise Chrome `br`/`zstd` bodies stay compressed and `.text` corrupts binary JS
 - Publish workflow: GitHub Environment `PYPI_API_TOKEN`, secret `__TOKEN__` (not a repo secret)
 - Twine user is literal `__token__`; `twine upload dist/* --non-interactive --verbose --skip-existing`

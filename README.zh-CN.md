@@ -36,12 +36,12 @@ xutls 的 import 名仍是 `utls`。**不要再装官方 `utls`**，两个包会
 
 ```python
 import asyncio
-from tlsreq import AsyncSession, Session
+from tlsreq import AsyncSession, Session, niquests, wreq
 
 async def main():
     async with AsyncSession(
-        backend="niquests",
-        impersonate="chrome152",
+        backend=niquests,
+        impersonate=niquests.chrome152,
         proxy="http://user:pass@host:port",
         timeout=30,
         extra={"pool_maxsize": 1},
@@ -60,7 +60,7 @@ async def main():
 
 asyncio.run(main())
 
-with Session("wreq", "chrome149", proxy="http://127.0.0.1:7890") as s:
+with Session(wreq, wreq.chrome154, proxy="http://127.0.0.1:7890") as s:
     r = s.get("https://example.com")
     print(r.status_code, r.headers)
 ```
@@ -74,11 +74,11 @@ with Session("wreq", "chrome149", proxy="http://127.0.0.1:7890") as s:
 | `niquests` | `chrome:152` | `chrome152` | 是 | 是 |
 | `httpx` | `chrome:152` | `chrome152` | 是 | 是 |
 | `curl_cffi` | `chrome150` | `chrome150` | 是 | 是 |
-| `wreq` | `Chrome149` | `chrome149` | 是 | 是 |
+| `wreq` | `Chrome154` | `chrome154` | 是 | 是 |
 
 无法识别的 `backend` 或 `impersonate` 会直接报错，不会静默换成别的指纹。
 
-`chrome` / `chromestable` 映射到该后端当前默认值。`wreq` 还可直接用库里的名字（`Firefox151`、`Safari18_5`、`Edge148`、`Opera131`、`OkHttp5` 等）。`curl_cffi` 可用 `firefox`、`safari`、`edge`、`chrome_android`、`tor` 以及带版本号的 profile。
+`chrome` / `chromestable` 映射到该后端当前默认值。指纹是库对象上的属性，编辑器只列出该库自己的名字：`Session(wreq, wreq.chrome154)`、`Session(httpx, httpx.chrome152)`、`Session(curl_cffi, curl_cffi.chrome150)`。`wreq` 含 `chrome154`、`firefox152`、`safari26_4`、`edge148`、`opera131`、`okhttp5`。`httpx` 和 `niquests`，以及别名 `nirequest`、`nirequests`、`nio`，有 8 个 xutls 预设（`chrome131`、`chrome142`、`chrome146`、`chrome148`、`chrome150`、`chrome152`、`chrome`、`chromestable`）。`curl`、`cffi` 和 `curl_cffi` 共用 curl_cffi 的名单。`Session(wreq, "chrome154")` 和 `Session("wreq", "chrome154")` 仍然能跑。引号里的指纹字符串不会弹出这份列表。`Session(impersonate=...)` 默认是 httpx。
 
 httpx / niquests 同时开 HTTP/2 和 HTTP/1.1，按 TLS ALPN 协商结果选协议；站点只支持 HTTP/1.1 时会回退，不会硬失败。
 
@@ -105,8 +105,8 @@ httpx / niquests 同时开 HTTP/2 和 HTTP/1.1，按 TLS ALPN 协商结果选协
 
 ```python
 Session(
-    backend: BackendName = "httpx",
-    impersonate: ImpersonateName | None = None,
+    backend: Backend[Imp] | str = httpx,
+    impersonate: Imp | None = None,
     *,
     proxy: str | None = None,
     timeout: float = 30,
@@ -118,7 +118,7 @@ Session(
 )
 ```
 
-支持上下文管理器。`AsyncSession` 的方法都是协程。
+`httpx`、`niquests`、`wreq`、`curl_cffi` 是从 `tlsreq` 导出的 `Backend` 对象，用到哪个就导入哪个，再传它上面的指纹属性：`Session(wreq, wreq.chrome154)`。`AsyncSession` 签名相同。支持上下文管理器。`AsyncSession` 的方法都是协程。
 
 ### 请求
 
