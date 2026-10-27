@@ -5,21 +5,31 @@ from typing import Any, Optional
 
 
 def _as_str(value: Any) -> str:
-    if isinstance(value, bytes):
+    if isinstance(value, memoryview):
+        value = value.tobytes()
+    if isinstance(value, (bytes, bytearray)):
         return value.decode("latin-1")
     return str(value)
+
+
+def _header_items(headers: Any) -> list[tuple[Any, Any]] | None:
+    if hasattr(headers, "multi_items"):
+        return list(headers.multi_items())
+    if hasattr(headers, "items"):
+        return list(headers.items())
+    if isinstance(headers, (list, tuple)):
+        return list(headers)
+    # wreq HeaderMap 没有 items()。keys() 与 values() 在同名头上对不齐，只能迭代成对的值。
+    if hasattr(headers, "get_all") and hasattr(headers, "keys"):
+        return list(headers)
+    return None
 
 
 def headers_to_dict(headers: Any) -> dict[str, str]:
     if headers is None:
         return {}
-    if hasattr(headers, "multi_items"):
-        items = list(headers.multi_items())
-    elif hasattr(headers, "items"):
-        items = list(headers.items())
-    elif isinstance(headers, (list, tuple)):
-        items = list(headers)
-    else:
+    items = _header_items(headers)
+    if items is None:
         return {}
     out: dict[str, str] = {}
     for key, value in items:

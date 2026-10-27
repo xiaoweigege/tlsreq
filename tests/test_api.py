@@ -57,6 +57,37 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(headers_to_dict({"A": "1"}), {"A": "1"})
         self.assertEqual(cookies_to_dict({"sid": "abc"}), {"sid": "abc"})
 
+        class HeaderMap:
+            def keys(self):
+                return []
+
+            def get_all(self, key):
+                return []
+
+            def __iter__(self):
+                yield memoryview(b"content-type"), memoryview(b"text/html")
+                yield memoryview(b"set-cookie"), memoryview(b"a=1")
+                yield memoryview(b"set-cookie"), memoryview(b"b=2")
+                yield memoryview(b"x-empty"), memoryview(b"")
+
+        self.assertEqual(
+            headers_to_dict(HeaderMap()),
+            {"content-type": "text/html", "set-cookie": "b=2", "x-empty": ""},
+        )
+
+    @unittest.skipUnless(_can_import("wreq"), "wreq not installed")
+    def test_wreq_header_map(self):
+        import wreq
+
+        headers = wreq.HeaderMap()
+        headers.insert("Content-Type", "text/html")
+        headers.append("Set-Cookie", "a=1")
+        headers.append("Set-Cookie", "b=2")
+        self.assertEqual(
+            headers_to_dict(headers),
+            {"content-type": "text/html", "set-cookie": "b=2"},
+        )
+
         class Obj:
             status_code = 204
 

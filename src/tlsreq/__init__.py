@@ -20,7 +20,7 @@ from .types import (
 )
 from .utls_release import UTLS_RELEASE, UTLS_RELEASE_PAGE
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 __all__ = [
     "AsyncSession",
     "Session",
